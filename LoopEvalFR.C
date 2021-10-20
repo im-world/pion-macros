@@ -22,13 +22,14 @@
 #include <eicqa_modules/EvalHit.h>
 #include "TMath.h"
 #include "TStyle.h"
+#include <unistd.h>
 
 R__LOAD_LIBRARY(libeicqa_modules.so)
 
-void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1, Double_t energyCut = 0.0, int trial = 0)
+void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.0, Double_t energyCut = 0.0, int trial = 0)
 {
 
-  Double_t EMC_cut = 0.2;
+  Double_t EMC_cut = 0.36;
 
   TString detector = "FHCAL_FEMC";
   TFile *f1 = new TFile("merged_Eval_FHCAL.root","READ"); 
@@ -58,7 +59,7 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
   long double total_te_CircularCut = 0;
   long double total_ge = 0; 
 
-  int nSlicesx = 15; // Number of ge-axis slices taken for making sigma_e vs ge plot
+  int nSlicesx = 10; // Number of ge-axis slices taken for making sigma_e vs ge plot
   int nSlicesy = 350;
   Double_t eta_min, eta_max; // Eta range of detectors
   Double_t x_radius_FHCAL = 0.15; // Length of semi-minor axis of circular (elliptical) in FHCAL
@@ -102,7 +103,6 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
     TH2D *te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_FHCAL = new TH2D("te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_FHCAL","#frac{#Delta e_{agg}}{truth e} vs truth e",nSlicesx,0,30,nSlicesy,te_minus_ge_by_ge_ge_min,te_minus_ge_by_ge_ge_max);
     //}
 
-
   TH2D *te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp = new TH2D("te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp","#frac{#Delta e_{agg}}{truth e} vs truth e",nSlicesx,0,30,nSlicesy,te_minus_ge_by_ge_ge_min,te_minus_ge_by_ge_ge_max); // histogram from which mean vs ge, sigma vs ge, and reduced_chi2 vs ge plots are derived
 
   TH2D *te_minus_ge_by_ge_ge_EtaCut_temp = new TH2D("te_minus_ge_by_ge_ge_EtaCut_temp","#frac{#Delta e_{agg}}{truth e} vs truth e",nSlicesx,0,30,500,-0.99,1.3); // histogram from which mean vs ge, sigma vs ge, and reduced_chi2 vs ge plots are derived
@@ -110,10 +110,10 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
   TH2D *te_by_ge_ge_EtaCut = new TH2D("te_by_ge_ge_EtaCut","te_{agg}/ge vs ge",200,0,30,200,-0.5,1.5);
   TH2D *te_by_ge_ge_EtaCut_CircularCut = new TH2D("te_by_ge_ge_EtaCut_CircularCut","te_{agg}/ge vs ge",200,0,30,200,-0.5,1.5);
 
-
   TH2D *te_by_ge_ge_EtaCut_CircularCut_FHCAL = new TH2D("te_by_ge_ge_EtaCut_CircularCut_FHCAL","te_{agg}/ge vs ge",200,0,30,200,-1,2);
   TH2D *te_by_ge_ge_EtaCut_CircularCut_FEMC = new TH2D("te_by_ge_ge_EtaCut_CircularCut_FEMC","te_{agg}/ge vs ge",200,0,30,200,-1,2);
 
+  TH1D *te_aggregate_EtaCut_CircularCut_FEMC = new TH1D("te_aggregate_EtaCut_CircularCut_FEMC","",200,0,1);
 
   auto *mean_te_by_ge_ge_EtaCut_CircularCut = new TProfile("mean_te_by_ge_ge_EtaCut_CircularCut","Mean_{te/ge}",nSlicesx,0,30,-0.5,35);
   auto *mean_te_by_ge_ge_EtaCut_CircularCut_FHCAL = new TProfile("mean_te_by_ge_ge_EtaCut_CircularCut_FHCAL","Mean_{te/ge}",nSlicesx,0,30,-0.5,35);
@@ -300,7 +300,12 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
 	}
 
 	if(te_aggregate_CircularCut > energyCutAggregate && (te_aggregate_CircularCut - te_aggregate_FHCAL_CircularCut) > EMC_cut){
+	  
+	  if(te_aggregate_CircularCut < 0.1) {
 
+	    cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
+
+	  }
 
 	  te_minus_ge_by_ge_ge_EtaCut->Fill(ge, (te_aggregate-ge)/ge);
 
@@ -327,6 +332,8 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
 	  }
 
 	  te_by_ge_ge_EtaCut_CircularCut->Fill(ge, te_aggregate_CircularCut/ge);
+
+	  te_aggregate_EtaCut_CircularCut_FEMC->Fill(te_aggregate_CircularCut - te_aggregate_FHCAL_CircularCut);
 
 	  te_by_ge_ge_EtaCut_CircularCut_FHCAL->Fill(ge, te_aggregate_FHCAL_CircularCut/ge);
 	  te_by_ge_ge_EtaCut_CircularCut_FEMC->Fill(ge, (te_aggregate_CircularCut - te_aggregate_FHCAL_CircularCut)/ge);
@@ -667,6 +674,13 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
   te_by_ge_ge_EtaCut->GetYaxis()->SetLabelSize(0.05);  
   te_by_ge_ge_EtaCut->GetYaxis()->SetTitleSize(0.05);
 
+  te_aggregate_EtaCut_CircularCut_FEMC->GetXaxis()->SetTitle("te_{agg} (GeV)");
+  te_aggregate_EtaCut_CircularCut_FEMC->GetXaxis()->SetLabelSize(0.05);  
+  te_aggregate_EtaCut_CircularCut_FEMC->GetXaxis()->SetTitleSize(0.05);
+  te_aggregate_EtaCut_CircularCut_FEMC->GetYaxis()->SetTitle("Counts");
+  te_aggregate_EtaCut_CircularCut_FEMC->GetYaxis()->SetLabelSize(0.05);  
+  te_aggregate_EtaCut_CircularCut_FEMC->GetYaxis()->SetTitleSize(0.05);
+
   te_by_ge_ge_EtaCut_CircularCut->GetXaxis()->SetTitle("Generated Energy (GeV)");
   te_by_ge_ge_EtaCut_CircularCut->GetXaxis()->SetLabelSize(0.05);  
   te_by_ge_ge_EtaCut_CircularCut->GetXaxis()->SetTitleSize(0.05);
@@ -745,6 +759,7 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
   f->GetList()->Add(te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp_2);
   f->GetList()->Add(te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp_1);
   f->GetList()->Add(te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp_chi2);
+  f->GetList()->Add(te_aggregate_EtaCut_CircularCut_FEMC);
   
   for(int sno = 0; sno < nSlicesx; sno++){
     f->GetList()->Add(slices[sno]);
@@ -838,6 +853,7 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
     std::cout<<"reduced_chi2 of fit: "<<fTrue->GetChisquare()/fTrue->GetNDF()<<"\n";
 
     c->Print(detector + "_sigmaE_ge_EtaCut_CircularCut.png");
+    usleep(5e6);
 
     gStyle -> SetOptStat(11);
     gStyle -> SetOptFit(112);
@@ -849,6 +865,10 @@ void LoopEvalFR(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1,
       slices[sno] -> Draw("hist same");
       c->Print(nameF);
     }
+
+    te_aggregate_EtaCut_CircularCut_FEMC->Draw();
+    c->Print("te_aggregate_EtaCut_CircularCut_FEMC.png");
+    usleep(5e6);
 
     gStyle -> SetOptStat(1);
 

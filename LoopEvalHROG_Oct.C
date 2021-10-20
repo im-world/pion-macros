@@ -22,13 +22,14 @@
 #include <eicqa_modules/EvalHit.h>
 #include "TMath.h"
 #include "TStyle.h"
+#include <unistd.h>
 
 R__LOAD_LIBRARY(libeicqa_modules.so)
 
-void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1, Double_t energyCut = 0.0)
+void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.0, Double_t energyCut = 0.0)
 {
 
-  Double_t EMC_cut = 0.2;
+  Double_t EMC_cut = 0.36;
   
   TString detector = "HCALIN_HCALOUT_CEMC";
   TFile *f1 = new TFile("merged_Eval_HCALIN.root","READ");
@@ -111,6 +112,8 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
   TH2D *te_by_ge_ge_EtaCut_CircularCut_HCALIN = new TH2D("te_by_ge_ge_EtaCut_CircularCut_HCALIN","te_{agg}/ge vs ge",200,0,30,200,-1,2);
   TH2D *te_by_ge_ge_EtaCut_CircularCut_HCALOUT = new TH2D("te_by_ge_ge_EtaCut_CircularCut_HCALOUT","te_{agg}/ge vs ge",200,0,30,200,-1,2);
   TH2D *te_by_ge_ge_EtaCut_CircularCut_CEMC = new TH2D("te_by_ge_ge_EtaCut_CircularCut_CEMC","te_{agg}/ge vs ge",200,0,30,200,-1,2);
+
+  TH1D *te_aggregate_EtaCut_CircularCut_CEMC = new TH1D("te_aggregate_EtaCut_CircularCut_CEMC","",200,0,1);
 
   auto *mean_te_by_ge_ge_EtaCut_CircularCut = new TProfile("mean_te_by_ge_ge_EtaCut_CircularCut","Mean_{te/ge}",nSlicesx,0,30,-0.5,35);
   auto *mean_te_by_ge_ge_EtaCut_CircularCut_HCALIN = new TProfile("mean_te_by_ge_ge_EtaCut_CircularCut_HCALIN","Mean_{te/ge}",nSlicesx,0,30,-0.5,35);
@@ -367,7 +370,7 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
 	  cout<<"total_te_CircularCut till now = "<<total_te_CircularCut<<"\n\n";
 	}
 
-        if(te_aggregate_CircularCut > energyCutAggregate && (te_aggregate_CircularCut - te_aggregate_HCALOUT_CircularCut -- te_aggregate_HCALIN_CircularCut) > EMC_cut){
+        if(te_aggregate_CircularCut > energyCutAggregate && (te_aggregate_CircularCut - te_aggregate_HCALOUT_CircularCut - te_aggregate_HCALIN_CircularCut) > EMC_cut){
 
 	  te_minus_ge_by_ge_ge_EtaCut->Fill(ge, (te_aggregate-ge)/ge);
 
@@ -392,6 +395,8 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
 	  if(debug==1){	
 	    cout<<"(ge, te_aggregate/ge): ("<<ge<<", "<<te_aggregate/ge<<")\n";
 	  }
+
+	  te_aggregate_EtaCut_CircularCut_CEMC->Fill(te_aggregate_CircularCut - te_aggregate_HCALIN_CircularCut - te_aggregate_HCALOUT_CircularCut);
 
 	  te_by_ge_ge_EtaCut_CircularCut->Fill(ge, te_aggregate_CircularCut/ge);
 	  te_by_ge_ge_EtaCut_CircularCut_HCALIN->Fill(ge, te_aggregate_HCALIN_CircularCut/ge);
@@ -509,7 +514,9 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
     Double_t gtheta = evaltree1->get_gtheta();
     Double_t ge = evaltree1->get_ge();
     Double_t te_aggregate_CircularCut = 0;
-    Double_t te_aggregate_CircularCut_normalised = 0;    
+    Double_t te_aggregate_CircularCut_normalised = 0;   
+    Double_t te_aggregate_HCALOUT_CircularCut = 0; 
+    Double_t te_aggregate_HCALIN_CircularCut = 0;
 
     int recalibration_factor = ceil((ge/30.0)*(Double_t)nSlicesx)- 1;
 
@@ -535,6 +542,7 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
 
 	    if (pow(dphi/y_radius_HCALIN,2)+pow(dtheta/x_radius_HCALIN,2)<=1){
               te_aggregate_CircularCut += te;
+	      te_aggregate_HCALIN_CircularCut += te;
 	      te_aggregate_CircularCut_normalised += te*weight_HCALIN/recalibrationArr1[recalibration_factor];
 	    }
 	  }
@@ -560,6 +568,7 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
 
 	    if (pow(dphi/y_radius_HCALOUT,2)+pow(dtheta/x_radius_HCALOUT,2)<=1){
 	      te_aggregate_CircularCut += te;
+	      te_aggregate_HCALOUT_CircularCut += te;
 	      te_aggregate_CircularCut_normalised += te*weight_HCALOUT/recalibrationArr2[recalibration_factor];
 	    }
 	  }
@@ -591,7 +600,7 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
    	}
       }
  
-      if(te_aggregate_CircularCut > energyCutAggregate){
+      if(te_aggregate_CircularCut > energyCutAggregate && (te_aggregate_CircularCut - te_aggregate_HCALOUT_CircularCut - te_aggregate_HCALIN_CircularCut) > EMC_cut){
 	mean_te_by_ge_ge_EtaCut_CircularCut->Fill(ge, te_aggregate_CircularCut_normalised/ge);
       }
 
@@ -624,7 +633,9 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
     Double_t gtheta = evaltree1->get_gtheta();
     Double_t ge = evaltree1->get_ge();
     Double_t te_aggregate_CircularCut = 0;
-    Double_t te_aggregate_CircularCut_normalised = 0;    
+    Double_t te_aggregate_CircularCut_normalised = 0; 
+    Double_t te_aggregate_HCALOUT_CircularCut = 0.0;
+    Double_t te_aggregate_HCALIN_CircularCut = 0.0;
 
     int recalibration_factor = ceil((ge/30.0)*(Double_t)nSlicesx)- 1;
 
@@ -650,6 +661,7 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
 
 	    if (pow(dphi/y_radius_HCALIN,2)+pow(dtheta/x_radius_HCALIN,2)<=1){
 	      te_aggregate_CircularCut += te;
+	      te_aggregate_HCALIN_CircularCut += te;
 	      te_aggregate_CircularCut_normalised += te*weight_HCALIN/recalibrationArr1[recalibration_factor];
 	    }
 	  }
@@ -675,6 +687,7 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
 
 	    if (pow(dphi/y_radius_HCALOUT,2)+pow(dtheta/x_radius_HCALOUT,2)<=1){
 	      te_aggregate_CircularCut += te;
+	      te_aggregate_HCALOUT_CircularCut += te;
 	      te_aggregate_CircularCut_normalised += te*weight_HCALOUT/recalibrationArr2[recalibration_factor];
 	    }
 	  }
@@ -706,7 +719,7 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
    	}
       }
       
-      if(te_aggregate_CircularCut > energyCutAggregate){
+      if(te_aggregate_CircularCut > energyCutAggregate && (te_aggregate_CircularCut - te_aggregate_HCALOUT_CircularCut - te_aggregate_HCALIN_CircularCut) > EMC_cut){
 	te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated->Fill(ge, ((te_aggregate_CircularCut_normalised/recalibrationArr[recalibration_factor])-ge)/ge);
 	te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp->Fill(ge, ((te_aggregate_CircularCut_normalised/recalibrationArr[recalibration_factor])-ge)/ge);
       }
@@ -773,6 +786,13 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
   te_by_ge_ge_EtaCut->GetYaxis()->SetTitle("te_{agg}/ge");
   te_by_ge_ge_EtaCut->GetYaxis()->SetLabelSize(0.05);  
   te_by_ge_ge_EtaCut->GetYaxis()->SetTitleSize(0.05);
+
+  te_aggregate_EtaCut_CircularCut_CEMC->GetXaxis()->SetTitle("te_{agg} (GeV)");
+  te_aggregate_EtaCut_CircularCut_CEMC->GetXaxis()->SetLabelSize(0.05);  
+  te_aggregate_EtaCut_CircularCut_CEMC->GetXaxis()->SetTitleSize(0.05);
+  te_aggregate_EtaCut_CircularCut_CEMC->GetYaxis()->SetTitle("Counts");
+  te_aggregate_EtaCut_CircularCut_CEMC->GetYaxis()->SetLabelSize(0.05);  
+  te_aggregate_EtaCut_CircularCut_CEMC->GetYaxis()->SetTitleSize(0.05);
 
   te_by_ge_ge_EtaCut_CircularCut->GetXaxis()->SetTitle("Generated Energy (GeV)");
   te_by_ge_ge_EtaCut_CircularCut->GetXaxis()->SetLabelSize(0.05);  
@@ -860,6 +880,7 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
   f->GetList()->Add(te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp_2);
   f->GetList()->Add(te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp_1);
   f->GetList()->Add(te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp_chi2);
+  f->GetList()->Add(te_aggregate_EtaCut_CircularCut_CEMC);
   
   for(int sno = 0; sno < nSlicesx; sno++){
     f->GetList()->Add(slices[sno]);
@@ -944,17 +965,18 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
   
     TLegend* legend = new TLegend(1.75,1.75);
     legend->SetHeader("Legend", "C");
-    legend->AddEntry(te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp_2, "#sigma_{e_{agg}} vs Generated Energy", "flep");
-    legend->AddEntry((TObject*)0,"","");
+    //legend->AddEntry(te_minus_ge_by_ge_ge_EtaCut_CircularCut_Recalibrated_temp_2, "#sigma_{e_{agg}} vs Generated Energy", "flep");
+    //legend->AddEntry((TObject*)0,"","");
     legend->AddEntry(fTrue, "p_{0} + p_{1}/#sqrt{ge} (Fitted)", "l");
     legend->AddEntry((TObject*)0,"","");
-    legend->AddEntry((TObject*)0,"0.1 + 0.5/#sqrt{ge} (Requirement)","" );
+    legend->AddEntry(fExp, "0.1 + 1/#sqrt{ge} (Requirement)", "l");
     legend->SetTextSize(0.033);
     legend->Draw();
 
     std::cout<<"reduced_chi2 of fit: "<<fTrue->GetChisquare()/fTrue->GetNDF()<<"\n";
 
     c->Print(detector + "_sigmaE_ge_EtaCut_CircularCut.png");
+    usleep(5e6);
 
     gStyle -> SetOptStat(11);
     gStyle -> SetOptFit(112);
@@ -966,6 +988,10 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
       slices[sno] -> Draw("hist same");
       c->Print(nameF);
     }
+
+    te_aggregate_EtaCut_CircularCut_FEMC->Draw();
+    c->Print("te_aggregate_EtaCut_CircularCut_FEMC.png");
+    usleep(5e6);
 
     gStyle -> SetOptStat(1);
 
