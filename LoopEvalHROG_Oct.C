@@ -29,7 +29,7 @@ R__LOAD_LIBRARY(libeicqa_modules.so)
 void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.0, Double_t energyCut = 0.0)
 {
 
-  Double_t EMC_cut = 0.36;
+  Double_t EMC_cut = 0.0;
   
   TString detector = "HCALIN_HCALOUT_CEMC";
   TFile *f1 = new TFile("merged_Eval_HCALIN.root","READ");
@@ -989,8 +989,8 @@ void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate 
       c->Print(nameF);
     }
 
-    te_aggregate_EtaCut_CircularCut_FEMC->Draw();
-    c->Print("te_aggregate_EtaCut_CircularCut_FEMC.png");
+    te_aggregate_EtaCut_CircularCut_CEMC->Draw();
+    c->Print("te_aggregate_EtaCut_CircularCut_CEMC.png");
     usleep(5e6);
 
     gStyle -> SetOptStat(1);
