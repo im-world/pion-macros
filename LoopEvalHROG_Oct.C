@@ -26,7 +26,7 @@
 
 R__LOAD_LIBRARY(libeicqa_modules.so)
 
-void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.1, Double_t energyCut = 0.0, int MIP_theta_parametrisation = 1){
+void LoopEvalHROG_Oct(int print = 1, int debug = 0, Double_t energyCutAggregate = 0.0, Double_t energyCut = 0.0, int MIP_theta_parametrisation = 1){
 
   Double_t EMC_cut = 0.2;
   TF1 *mip_pmzn_energy_cut_ftheta = new TF1("mip_pmzn_energy_cut_ftheta", "(9.46093e-01) - 1.62771*x + 1.37776*(x^2) - (5.4996e-01)*(x^3) + (8.82673e-02)*(x^4)"); 
