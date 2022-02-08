@@ -311,11 +311,11 @@ TH2D *te_minus_ge_by_ge_ge_EtaCut_temp = new TH2D("te_minus_ge_by_ge_ge_EtaCut_t
 
        if(te_aggregate_CircularCut > energyCutAggregate && (te_aggregate_CircularCut - te_aggregate_FHCAL_CircularCut) > EMC_cut){
 	  
+	 /*      
 	 if(te_aggregate_CircularCut < 0.1) {
-
 	   cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
-
 	 }
+	 */
 
 	 te_minus_ge_by_ge_ge_EtaCut->Fill(ge, (te_aggregate-ge)/ge);
 
